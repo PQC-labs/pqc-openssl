@@ -31,17 +31,17 @@ openssl version -a | tee "${RESULTS_DIR}/version.txt"
 echo
 echo "[*] Available providers..."
 openssl list -providers -verbose \
-    | tee "${RESULTS_DIR}/providers.txt"
+    > "${RESULTS_DIR}/providers.txt"
 
 echo
 echo "[*] Available KEM algorithms..."
 openssl list -kem-algorithms \
-    | tee "${RESULTS_DIR}/kem-algorithms.txt"
+    > "${RESULTS_DIR}/kem-algorithms.txt"
 
 echo
 echo "[*] Available TLS groups..."
 openssl list -tls-groups \
-    | tee "${RESULTS_DIR}/tls-groups.txt"
+    > "${RESULTS_DIR}/tls-groups.txt"
 
 echo
 echo "[*] Available signature algorithms..."
@@ -54,46 +54,46 @@ openssl list -public-key-algorithms \
     > "${RESULTS_DIR}/public-key-algorithms.txt"
 
 echo
-echo "[*] Generating ML-KEM-512 key pair..."
+echo "[*] Generating ML-KEM-512 key pair for Alice..."
 
 openssl genpkey \
     -algorithm ML-KEM-512 \
-    -out "${ARTIFACTS_DIR}/mlkem512-private.pem"
+    -out "${ARTIFACTS_DIR}/alice-private.pem"
 
 openssl pkey \
-    -in "${ARTIFACTS_DIR}/mlkem512-private.pem" \
+    -in "${ARTIFACTS_DIR}/alice-private.pem" \
     -pubout \
-    -out "${ARTIFACTS_DIR}/mlkem512-public.pem"
+    -out "${ARTIFACTS_DIR}/alice-public.pem"
 
-echo "[+] Key pair generated."
+echo "[+] Alice key pair generated."
 
 echo
-echo "[*] Inspecting private key..."
+echo "[*] Inspecting Alice private key..."
 
 openssl pkey \
-    -in "${ARTIFACTS_DIR}/mlkem512-private.pem" \
+    -in "${ARTIFACTS_DIR}/alice-private.pem" \
     -text \
-    > "${RESULTS_DIR}/mlkem512-private.txt"
+    > "${RESULTS_DIR}/alice-private.txt"
 
 echo
-echo "[*] Inspecting public key..."
+echo "[*] Inspecting Alice public key..."
 
 openssl pkey \
     -pubin \
-    -in "${ARTIFACTS_DIR}/mlkem512-public.pem" \
+    -in "${ARTIFACTS_DIR}/alice-public.pem" \
     -text \
-    > "${RESULTS_DIR}/mlkem512-public.txt"
+    > "${RESULTS_DIR}/alice-public.txt"
 
 echo
 echo "[*] Parsing ASN.1 structures..."
 
 openssl asn1parse \
-    -in "${ARTIFACTS_DIR}/mlkem512-private.pem" \
-    > "${RESULTS_DIR}/mlkem512-private-asn1.txt"
+    -in "${ARTIFACTS_DIR}/alice-private.pem" \
+    > "${RESULTS_DIR}/alice-private-asn1.txt"
 
 openssl asn1parse \
-    -in "${ARTIFACTS_DIR}/mlkem512-public.pem" \
-    > "${RESULTS_DIR}/mlkem512-public-asn1.txt"
+    -in "${ARTIFACTS_DIR}/alice-public.pem" \
+    > "${RESULTS_DIR}/alice-public-asn1.txt"
 
 echo
 echo "[*] Measuring generated files..."
@@ -110,4 +110,4 @@ echo "[*] Generated result files:"
 ls -lh "${RESULTS_DIR}"
 
 echo
-echo "[+] Environment ready for encapsulation experiment."
+echo "[+] Environment prepared successfully."
