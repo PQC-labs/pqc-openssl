@@ -1,0 +1,254 @@
+# Experiment 003 - ML-KEM Encapsulation and Decapsulation
+
+  Property          Value
+  ----------------- ----------------------------------------
+  Experiment        003
+  Topic             ML-KEM Encapsulation and Decapsulation
+  OpenSSL Version   3.5.x
+  Algorithm         ML-KEM-512
+  Status            Completed
+
+## Overview
+
+This experiment demonstrates the complete lifecycle of the
+NIST-standardized Module-Lattice Key Encapsulation Mechanism (ML-KEM)
+using OpenSSL 3.5.
+
+Unlike traditional public-key encryption schemes, ML-KEM is designed to
+establish a shared secret between two parties rather than encrypt
+arbitrary application data. This shared secret is later used to derive
+symmetric session keys in protocols such as TLS 1.3.
+
+Although the experiment uses the traditional cryptographic actors
+**Alice** and **Bob**, Alice should be understood as the equivalent of a
+**server** and Bob as the **client** initiating a secure connection.
+
+## Prerequisites
+
+Before completing this experiment, you should be familiar with:
+
+-   Experiment 001 -- OpenSSL PQC Baseline
+-   Experiment 002 -- ML-KEM Key Generation and ASN.1 Analysis
+
+Concepts introduced previously:
+
+-   ASN.1
+-   Object Identifiers (OIDs)
+-   PKCS#8
+-   SubjectPublicKeyInfo (SPKI)
+-   ML-KEM key generation
+
+## What is a Key Encapsulation Mechanism?
+
+A Key Encapsulation Mechanism (KEM) is a public-key primitive used to
+establish a shared secret over an insecure channel.
+
+Unlike RSA encryption, a KEM does **not** encrypt arbitrary application
+data.
+
+Instead, the initiator generates:
+
+-   a fresh shared secret;
+-   a ciphertext.
+
+The ciphertext is transmitted to the recipient. Using the corresponding
+private key, the recipient reconstructs exactly the same shared secret.
+
+The shared secret itself is **never transmitted** across the network.
+
+In real protocols such as TLS 1.3, this shared secret is fed into a Key
+Derivation Function (KDF) to derive symmetric encryption keys for
+algorithms such as AES-GCM or ChaCha20-Poly1305.
+
+> **Important**
+>
+> The ML-KEM ciphertext is **not** an encrypted application message. It
+> contains only the cryptographic information required for the recipient
+> to reconstruct the shared secret.
+
+## ML-KEM in OpenSSL
+
+OpenSSL 3.5 provides native support for:
+
+-   ML-KEM-512
+-   ML-KEM-768
+-   ML-KEM-1024
+
+This experiment uses **ML-KEM-512**.
+
+Generated keys are stored as:
+
+-   Private key: PKCS#8
+-   Public key: SubjectPublicKeyInfo (SPKI)
+
+## Roles in the Protocol
+
+### Alice (Recipient / Server)
+
+Alice generates an ML-KEM key pair.
+
+    alice-private.pem
+    alice-public.pem
+
+The private key remains secret while the public key can be distributed
+freely.
+
+### Bob (Initiator / Client)
+
+Bob obtains Alice's public key and performs encapsulation.
+
+This operation generates:
+
+    ciphertext.bin
+    bob-shared-secret.bin
+
+Only the ciphertext is transmitted.
+
+### Alice (Decapsulation)
+
+Alice receives the ciphertext and reconstructs:
+
+    alice-shared-secret.bin
+
+If everything succeeds, both shared secrets are identical.
+
+## Protocol Overview
+
+``` text
+                           ML-KEM Key Establishment
+
+
+        Alice (Recipient / Server)             Bob (Initiator / Client)
+        ──────────────────────────             ────────────────────────
+
+        Generate ML-KEM key pair
+                 │
+     ┌───────────┴───────────┐
+     │                       │
+alice-private.pem      alice-public.pem
+     │                       │
+     │                       └──────────────────────────────┐
+     │                                                      │
+     │                                              Obtain public key
+     │                                                      │
+     │                                                      ▼
+     │                                            Encapsulation
+     │                                                      │
+     │                                ┌─────────────────────┴────────────────────┐
+     │                                │                                          │
+     │                         ciphertext.bin                         bob-shared-secret.bin
+     │                                │
+     │<───────────────────────────────┘
+     │
+     ▼
+Decapsulation
+     │
+     ▼
+alice-shared-secret.bin
+     │
+     ▼
+Compare shared secrets
+     │
+     ▼
+Both parties obtain the same shared secret
+```
+
+Only the ciphertext is transmitted. The shared secret never leaves the
+machine where it is generated.
+
+## Laboratory Walkthrough
+
+### 1. Prepare the environment
+
+``` bash
+./scripts/verify.sh
+```
+
+### 2. Bob encapsulates a shared secret
+
+``` bash
+./scripts/encapsulate.sh
+```
+
+### 3. Alice decapsulates the ciphertext
+
+``` bash
+./scripts/decapsulate.sh
+```
+
+### 4. Compare the shared secrets
+
+``` bash
+./scripts/compare.sh
+```
+
+## Artifact Summary
+
+  -------------------------------------------------------------------------------
+  Artifact                    Generated by               Description
+  --------------------------- -------------------------- ------------------------
+  `alice-private.pem`         Alice                      ML-KEM private key
+                                                         (PKCS#8)
+
+  `alice-public.pem`          Alice                      ML-KEM public key (SPKI)
+
+  `ciphertext.bin`            Bob                        Ciphertext sent to Alice
+
+  `bob-shared-secret.bin`     Bob                        Shared secret generated
+                                                         during encapsulation
+
+  `alice-shared-secret.bin`   Alice                      Shared secret
+                                                         reconstructed during
+                                                         decapsulation
+  -------------------------------------------------------------------------------
+
+## Generated Artifacts
+
+``` text
+artifacts/
+├── alice-private.pem
+├── alice-public.pem
+├── ciphertext.bin
+├── bob-shared-secret.bin
+└── alice-shared-secret.bin
+```
+
+The `results/` directory contains environment information, supported
+algorithms, ASN.1 analysis, OpenSSL version information and execution
+metadata.
+
+## Results
+
+The experiment demonstrates:
+
+-   Successful ML-KEM key generation.
+-   Successful encapsulation.
+-   Successful decapsulation.
+-   Correct reconstruction of the shared secret.
+-   Identical shared secrets on both sides.
+-   Fresh ciphertexts and shared secrets for every encapsulation.
+
+## Conclusions
+
+This experiment introduces the first post-quantum primitive used
+throughout the remainder of this laboratory.
+
+Key takeaways:
+
+-   ML-KEM establishes a shared secret rather than encrypting
+    application data.
+-   Only the ciphertext is transmitted.
+-   The shared secret is independently derived by both participants.
+-   The same public key can be reused to establish multiple independent
+    shared secrets.
+
+These concepts form the foundation for hybrid TLS key exchange and
+future OpenSSH integration.
+
+## Next Experiment
+
+Experiment 004 introduces **ML-DSA**, the NIST-standardized post-quantum
+digital signature algorithm.
+
+Together, ML-KEM and ML-DSA provide the building blocks for post-quantum
+secure communication protocols.
