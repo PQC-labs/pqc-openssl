@@ -1,0 +1,9 @@
+# ============================================================
+# Generated experiment results
+# ============================================================
+
+# Ignore everything inside experiment results directories
+experiments/*/results/*
+
+# Keep the results directories in Git
+!experiments/*/results/.gitkeep

@@ -25,7 +25,7 @@ experiment-001/
 │   ├── build.sh
 │   ├── run.sh
 │   └── verify.sh
-├── artifacts/
+│   └── clean.sh
 └── results/
 ```
 
@@ -52,7 +52,7 @@ Start an interactive container:
 
 ## Verification
 
-Verify that OpenSSL was built correctly:
+After the container has been executed, we can exit and run the verification from the host:
 
 ```bash
 ./scripts/verify.sh
@@ -77,6 +77,16 @@ After completing this experiment you should have:
 - A working OpenSSL 3.5.2 installation.
 - Native NIST PQC algorithms available without external providers.
 - A validated baseline for the remaining experiments.
+
+## Finish the lab
+
+After completing this experiment remove and clean the environment:
+
+Verify that OpenSSL was built correctly:
+
+```bash
+./scripts/clean.sh
+```
 
 ## Documentation
 
