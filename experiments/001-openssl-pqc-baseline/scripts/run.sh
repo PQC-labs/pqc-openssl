@@ -2,8 +2,8 @@
 
 set -euo pipefail
 
-IMAGE_NAME="pqc_lab001_openssl-experiment-001"
-CONTAINER_NAME="pqc_lab001_openssl-experiment-001"
+IMAGE_NAME="pqc_lab001_openssl-openssl-baseline"
+CONTAINER_NAME="pqc_lab001_openssl-openssl-baseline"
 
 # Remove any previous container with the same name
 docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
