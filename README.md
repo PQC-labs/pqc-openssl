@@ -1,4 +1,9 @@
-# pqc-openssl
+# OpenSSL Post-Quantum Cryptography Laboratory
+
+This repository is part of the PQC-labs project. You can find information about the project here:
+
+https://pqc-labs.github.io/pqc-lab/
+
 Experimental laboratory for Post-Quantum Cryptography (PQC) using OpenSSL. Reproducible Docker-based experiments focused on native PQC support, hybrid cryptography and interoperability.
 
 ## Roadmap
