@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-CONTAINER_NAME="pqc_lab001_openssl-experiment-001"
+CONTAINER_NAME="pqc_lab001_openssl-openssl-build-baseline"
 
 docker rm -f "${CONTAINER_NAME}" >/dev/null 2>&1 || true
 
