@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-IMAGE_NAME="pqc_lab001_openssl-openssl-baseline"
+IMAGE_NAME="pqc_lab001_openssl-openssl-build-baseline"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXPERIMENT_DIR="$(dirname "$SCRIPT_DIR")"
