@@ -1,7 +1,7 @@
 FROM ubuntu:24.04
 
 LABEL org.opencontainers.image.title="pqc-openssl"
-LABEL org.opencontainers.image.description="Experiment 001 - Build OpenSSL with native PQC support"
+LABEL org.opencontainers.image.description="Experiment 002 - MLKEM Generation ASN.1 Analysis"
 LABEL org.opencontainers.image.authors="PQC-Labs"
 
 ARG OPENSSL_VERSION=3.5.2

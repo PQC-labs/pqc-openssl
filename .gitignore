@@ -12,8 +12,10 @@ results/benchmarks/*
 # Generated experiment results
 # ============================================================
 
-# Ignore everything inside experiment results directories
+# Ignore generated results inside experiments
 experiments/*/results/*
-
-# Keep the results directories in Git
 !experiments/*/results/.gitkeep
+
+# Ignore generated artifacts inside experiments
+experiments/*/artifacts/*
+!experiments/*/artifacts/.gitkeep

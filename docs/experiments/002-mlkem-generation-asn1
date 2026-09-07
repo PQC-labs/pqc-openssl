@@ -1,34 +1,335 @@
-# Experiment 002 – ML-KEM key generation and ASN.1 analysis
+# Experiment 002 – ML-KEM Key Generation and ASN.1 Analysis
 
 ## Purpose
 
 This experiment studies how OpenSSL 3.5 represents native post-quantum cryptographic keys.
 
-Unlike the previous experiment, which focused on identifying available PQC algorithms, this experiment analyses the internal structure used to store ML-KEM key pairs.
+Unlike the previous experiment, which focused on identifying available PQC algorithms, this experiment analyses the structures and encodings used to store ML-KEM key pairs.
+
+The experiment uses ML-KEM-512 as a representative example.
 
 ## Main observations
 
-- OpenSSL 3.5 generates ML-KEM keys natively.
-- The default provider contains the standardized ML-KEM implementations.
-- Public keys are stored as SubjectPublicKeyInfo structures.
-- Private keys are stored using PKCS#8.
-- Both formats rely on ASN.1 and DER encoding.
-- The algorithm is identified through an OID.
-- The cryptographic material itself is stored as BIT STRING or OCTET STRING fields.
+* OpenSSL 3.5 generates ML-KEM keys natively.
+* The default provider contains the standardized ML-KEM implementations.
+* Public keys are stored using the **SubjectPublicKeyInfo** structure.
+* Private keys are stored using **PKCS#8**.
+* Both structures are defined using **ASN.1**.
+* They are encoded using **DER** when represented as binary data.
+* PEM files provide a textual representation of the DER-encoded data.
+* The ML-KEM algorithm is identified using an **Object Identifier (OID)**.
+* The cryptographic key material is carried inside ASN.1 `BIT STRING` or `OCTET STRING` fields, depending on the structure.
+
+---
+
+## ASN.1
+
+**ASN.1 (Abstract Syntax Notation One)** is a formal notation used to describe the structure of data.
+
+It does not define a particular byte-level representation. Instead, it defines the types, fields and hierarchy of the data.
+
+For example, an ASN.1 structure can describe an object conceptually as:
+
+```text
+SEQUENCE
+ ├── AlgorithmIdentifier
+ │    ├── OBJECT IDENTIFIER
+ │    └── parameters
+ │
+ └── key material
+```
+
+This is particularly useful in cryptography because different implementations need a standardized way of representing objects such as public keys, private keys, certificates and signatures.
+
+ASN.1 is therefore a **data structure definition language**, not an encoding format.
+
+---
+
+## DER
+
+**DER (Distinguished Encoding Rules)** defines how an ASN.1 structure is converted into a deterministic binary representation.
+
+For the same ASN.1 structure and values, DER produces a unique byte sequence.
+
+This makes DER particularly suitable for cryptographic objects, where the exact binary representation matters.
+
+The `asn1parse` command used in this experiment operates on this DER-encoded representation and displays the ASN.1 hierarchy.
+
+For example:
+
+```text
+SEQUENCE
+ ├── SEQUENCE
+ │    └── OBJECT : ML-KEM-512
+ └── BIT STRING
+```
+
+The output is therefore not showing a different key format. It is showing the internal ASN.1 structure contained in the encoded key.
+
+---
+
+## PEM
+
+**PEM (Privacy-Enhanced Mail)** is a textual container format commonly used to represent binary cryptographic objects.
+
+PEM does not define the cryptographic structure itself.
+
+Instead, it normally contains:
+
+1. A DER-encoded object.
+2. Base64 encoding of that DER data.
+3. A header and footer identifying the object.
+
+For example:
+
+```text
+-----BEGIN PUBLIC KEY-----
+(base64 encoded DER data)
+-----END PUBLIC KEY-----
+```
+
+The important relationship is therefore:
+
+```text
+ASN.1
+  │
+  │ defines the structure
+  ▼
+DER
+  │
+  │ binary encoding
+  ▼
+PEM
+  │
+  │ Base64 + header/footer
+  ▼
+Text file
+```
+
+PEM is therefore mainly a **transport and presentation format**, while ASN.1 defines the structure and DER defines its binary encoding.
+
+---
+
+## PKCS#8 and private keys
+
+Private keys are commonly represented using the **PKCS#8 PrivateKeyInfo** structure.
+
+Conceptually, the structure is:
+
+```text
+PrivateKeyInfo
+ ├── version
+ ├── privateKeyAlgorithm
+ │    └── algorithm OID
+ └── privateKey
+```
+
+For the ML-KEM-512 private key observed in this experiment, the ASN.1 parser showed:
+
+```text
+SEQUENCE
+ ├── INTEGER : 00
+ ├── SEQUENCE
+ │    └── OBJECT : ML-KEM-512
+ └── OCTET STRING
+```
+
+The `OCTET STRING` contains the encoded private-key material.
+
+The important point is that PKCS#8 provides a **generic container for private keys**. It does not need a completely new top-level format for every cryptographic algorithm.
+
+---
+
+## SubjectPublicKeyInfo and public keys
+
+Public keys are commonly represented using the **SubjectPublicKeyInfo (SPKI)** structure.
+
+Conceptually:
+
+```text
+SubjectPublicKeyInfo
+ ├── algorithm
+ │    └── algorithm OID
+ └── subjectPublicKey
+```
+
+The ML-KEM-512 public key observed in this experiment was:
+
+```text
+SEQUENCE
+ ├── SEQUENCE
+ │    └── OBJECT : ML-KEM-512
+ └── BIT STRING
+```
+
+The `BIT STRING` contains the encoded public-key material.
+
+SPKI is widely used throughout the X.509/PKI ecosystem and allows different public-key algorithms to be represented using the same outer structure.
+
+---
+
+## Object Identifiers (OIDs)
+
+An **Object Identifier (OID)** is a globally unique identifier used to identify algorithms, data types and other objects.
+
+In the ML-KEM-512 structure observed during this experiment, OpenSSL identifies the algorithm as:
+
+```text
+2.16.840.1.101.3.4.4.1
+```
+
+which corresponds to:
+
+```text
+id-alg-ml-kem-512
+```
+
+The OID tells software which algorithm the encoded key belongs to.
+
+The important distinction is:
+
+```text
+OID
+ │
+ └── identifies the algorithm
+
+Key material
+ │
+ └── contains the actual cryptographic data
+```
+
+The OID itself is therefore **not the key**. It is metadata that identifies how the key material should be interpreted.
+
+---
+
+## How the formats fit together
+
+The different concepts encountered in this experiment operate at different layers:
+
+```text
+                    Cryptographic key
+                           │
+                           ▼
+              PKCS#8 / SubjectPublicKeyInfo
+                           │
+                           ▼
+                         ASN.1
+                  (data structure definition)
+                           │
+                           ▼
+                          DER
+                  (binary ASN.1 encoding)
+                           │
+                           ▼
+                          PEM
+              (Base64 + headers/footers)
+```
+
+This distinction is important because these terms are often incorrectly used as if they described the same thing.
+
+They do not:
+
+| Concept              | Role                                                       |
+| -------------------- | ---------------------------------------------------------- |
+| ASN.1                | Defines the structure of the data                          |
+| DER                  | Encodes ASN.1 structures into deterministic binary data    |
+| PEM                  | Represents binary data as Base64 text with headers/footers |
+| PKCS#8               | Defines a standard structure for private keys              |
+| SubjectPublicKeyInfo | Defines a standard structure for public keys               |
+| OID                  | Identifies the algorithm or object                         |
+
+---
+
+## What `asn1parse` is showing
+
+When running:
+
+```bash
+openssl asn1parse -in mlkem512-public.pem
+```
+
+OpenSSL first processes the PEM representation and obtains the underlying DER data.
+
+`asn1parse` then interprets that DER data according to ASN.1 and displays the resulting structure.
+
+Therefore, output such as:
+
+```text
+0:d=0  hl=4 l=818 cons: SEQUENCE
+4:d=1  hl=2 l=11  cons: SEQUENCE
+6:d=2  hl=2 l=9   prim: OBJECT :ML-KEM-512
+17:d=1 hl=4 l=801 prim: BIT STRING
+```
+
+should be read as a **tree representation of the encoded data**.
+
+For example:
+
+* `SEQUENCE` is an ASN.1 constructed type.
+* `OBJECT` represents an Object Identifier.
+* `BIT STRING` contains the encoded public-key material.
+* `d=0`, `d=1`, etc. indicate the nesting depth.
+* `l=` indicates the length of the encoded value.
+* `hl=` indicates the size of the ASN.1 header.
+
+The parser is therefore useful for understanding **how the key is structured**, rather than simply displaying the key itself.
+
+---
+
+## Public key vs private key
+
+The main structural difference observed in this experiment is:
+
+### Public key
+
+```text
+SubjectPublicKeyInfo
+ ├── AlgorithmIdentifier
+ │    └── ML-KEM-512 OID
+ └── BIT STRING
+      └── public key material
+```
+
+### Private key
+
+```text
+PKCS#8 PrivateKeyInfo
+ ├── version
+ ├── AlgorithmIdentifier
+ │    └── ML-KEM-512 OID
+ └── OCTET STRING
+      └── private key material
+```
+
+Both use the same general ASN.1/DER approach, but they use different standardized containers and different ASN.1 fields for carrying the key material.
+
+---
 
 ## Lessons learned
 
-One of the main findings of this experiment is that OpenSSL does not introduce a new storage format for post-quantum cryptography.
+One of the main findings of this experiment is that OpenSSL does not introduce a completely new storage format for post-quantum cryptography.
 
-Instead, existing standards such as ASN.1, DER, PKCS#8 and SubjectPublicKeyInfo are reused. New algorithms are incorporated simply by assigning new Object Identifiers (OIDs) and defining the internal encoding of the key material.
+Instead, existing standards such as ASN.1, DER, PKCS#8 and SubjectPublicKeyInfo are reused.
 
-This design allows post-quantum algorithms to integrate naturally into the existing PKI ecosystem.
+The integration of a new algorithm therefore involves defining how the algorithm is identified and how its key material is represented within existing standardized structures.
+
+For ML-KEM, the algorithm is identified through its OID, while the actual key material is carried inside the appropriate ASN.1 structure.
+
+This design allows post-quantum algorithms to integrate naturally with existing cryptographic software, certificate infrastructure and PKI systems.
+
+---
 
 ## Related concepts
 
-- ASN.1
-- DER
-- PEM
-- PKCS#8
-- SubjectPublicKeyInfo
-- Object Identifier (OID)
+* ASN.1
+* DER
+* PEM
+* PKCS#8
+* SubjectPublicKeyInfo (SPKI)
+* AlgorithmIdentifier
+* Object Identifier (OID)
+* BIT STRING
+* OCTET STRING
+* X.509 / PKI
+* ML-KEM
+* Key Encapsulation Mechanism (KEM)

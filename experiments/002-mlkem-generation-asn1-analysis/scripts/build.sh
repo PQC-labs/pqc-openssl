@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-IMAGE_NAME="pqc-openssl:experiment-002"
+IMAGE_NAME="pqc_lab002_openssl-openssl-mlkem-generation-asn1-analysis"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXPERIMENT_DIR="$(dirname "$SCRIPT_DIR")"
